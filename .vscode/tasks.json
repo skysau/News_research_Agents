@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run FastAPI Server",
+      "type": "shell",
+      "command": "uvicorn app.main:app --reload",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Docker Image",
+      "type": "shell",
+      "command": "docker build -t news-research-agent .",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Docker Container",
+      "type": "shell",
+      "command": "docker run -p 8000:8000 --env-file .env news-research-agent",
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}
