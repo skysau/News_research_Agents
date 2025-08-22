@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 
 # Updated imports for langchain v0.2+
 from langchain_community.llms import OpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
@@ -19,6 +20,7 @@ from langchain_community.document_loaders import (
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.schema import Document
+from whatsapp_service import WhatsAppService
 
 load_dotenv()
 
@@ -87,8 +89,22 @@ def process_files_to_documents(files) -> List[Document]:
 def send_notification(message: str, notification_type: str = "success") -> dict:
     """Send notification and return status"""
     try:
-        # Here you can implement actual notification logic
-        # For example: email, SMS, webhook, etc.
+        # WhatsApp notification using WhatsAppService
+        # SUPPORT_WHATSAPP_NUMBER=+919985813175
+        
+
+        resp = service.send_whatsapp_message({
+
+            "campaignName": "utility_b2c_trading_354",
+            "mobileNumber": ["+918405927415"],
+            "templateParams": ["Naman", message,"sdghhj" ],
+            "media": {
+                "url": "https://pickright-server.s3.ap-south-1.amazonaws.com/live/assets/assets/videos/diversified_portfolios.mp4",
+                "filename": "user_paid_subscription"
+            }
+        })
+
+        print(resp)
         
         # For now, we'll simulate notification sending
         notification_data = {
@@ -97,6 +113,7 @@ def send_notification(message: str, notification_type: str = "success") -> dict:
             "type": notification_type,
             "timestamp": str(pd.Timestamp.now()) if 'pd' in globals() else "N/A"
         }
+
         
         # Log the notification (you can replace this with actual notification service)
         print(f"Notification sent: {notification_data}")
@@ -129,7 +146,7 @@ def generate_content_summary(documents: List[Document]) -> str:
     
     try:
         # Use OpenAI to generate summary
-        llm = OpenAI(temperature=0.3, max_tokens=600)
+        llm = ChatOpenAI(model="gpt-4o", temperature=0.3, max_tokens=600)
         summary_prompt = f"""Provide a comprehensive summary of the following content in approximately 400 words. 
         Make it detailed and informative, covering all key points and important details:
         
@@ -138,7 +155,7 @@ def generate_content_summary(documents: List[Document]) -> str:
         Comprehensive Summary (400 words):"""
         
         summary = llm.invoke(summary_prompt)
-        return summary.strip()
+        return summary.content.strip()
         
     except Exception as e:
         return f"Summary generation failed: {str(e)}"
@@ -185,7 +202,7 @@ def generate_financial_report_summary():
         vectorstore_openai = FAISS.load_local(VECTORSTORE_PATH, embeddings, allow_dangerous_deserialization=True)
         
         # Create LLM with specific settings for report analysis
-        llm = OpenAI(temperature=0.2, max_tokens=1500)
+        llm = ChatOpenAI(model="gpt-4o", temperature=0.2, max_tokens=1500)
         
         # Create retriever to get all relevant content
         retriever = vectorstore_openai.as_retriever(
@@ -243,7 +260,7 @@ def ask_question_from_vectorstore(question: str):
         import streamlit as st
         if hasattr(st.session_state, 'content_summary') and st.session_state.content_summary:
             # Create LLM for summary-based answering
-            llm = OpenAI(temperature=0.1, max_tokens=300)
+            llm = ChatOpenAI(model="gpt-4o", temperature=0.1, max_tokens=300)
             
             summary_prompt = f"""Based ONLY on the following content summary, answer this question: {question}
 
@@ -255,7 +272,7 @@ If the answer can be found in the summary above, provide a clear answer. If the 
 Answer:"""
             
             summary_result = llm.invoke(summary_prompt)
-            summary_answer = summary_result.strip()
+            summary_answer = summary_result.content.strip()
             
             # If answer found in summary, return it
             if summary_answer and "NOT_IN_SUMMARY" not in summary_answer.upper():
@@ -271,12 +288,12 @@ Answer:"""
         vectorstore_openai = FAISS.load_local(VECTORSTORE_PATH, embeddings, allow_dangerous_deserialization=True)
         
         # Create LLM with lower temperature for more focused answers
-        llm = OpenAI(temperature=0.1, max_tokens=500)
+        llm = ChatOpenAI(model="gpt-4o", temperature=0.1, max_tokens=500)
         
         # Create retriever with more documents for better context
         retriever = vectorstore_openai.as_retriever(
             search_type="similarity",
-            search_kwargs={"k": 5}  # Retrieve top 5 most relevant chunks
+            search_kwargs={"k": 10}  # Retrieve top 5 most relevant chunks
         )
         
         # Create chain with document-focused settings
