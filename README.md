@@ -10,7 +10,8 @@ A FastAPI backend for news research using OpenAI and FAISS, containerized with D
 
 
 ## Run Command
-
+source venv/bin/activate
+streamlit run streamlit_combined.py --server.port=8502
 To start the FastAPI server locally:
 
 ```bash
